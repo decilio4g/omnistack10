@@ -1,9 +1,9 @@
 const axios = require('axios');
 const Dev = require('../models/Dev');
 const parseStringAsArray = require('../utils/parseStringAsArray');
-
+const { findConnections, sendMessage } = require('../websocket')
 module.exports = {
-  async index(req, res) {
+  async index(res) {
     const dev = await Dev.find();
 
     return res.json(dev)
@@ -34,6 +34,13 @@ module.exports = {
         techs: techsArray,
         location
       })
+
+      const sendSocketMessageTo = findConnections(
+        { latitude, longitude },
+        techsArray,
+      )
+
+      sendMessage(sendSocketMessageTo, 'NewDev', dev);
     }
     return res.json(dev);
   },
@@ -43,7 +50,7 @@ module.exports = {
     const dev = await Dev.findOne({ github_username })
 
     if (!dev) {
-     return res.status(400).json({ error: 'dev não encontrado' }) 
+      return res.status(400).json({ error: 'dev não encontrado' })
     }
 
     await dev.update({ name, bio });
